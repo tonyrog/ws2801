@@ -1,0 +1,6 @@
+{application, ws2801,
+ [{description, "WS2801 spi controller"},
+  {vsn, git},
+  {env, []},
+  {applications,[kernel,stdlib]}
+  ]}.
