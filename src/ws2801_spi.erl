@@ -5,19 +5,35 @@
 
 -compile(export_all).
 
--define(SPEED, 2000000).   %% 2MHz
+-define(SPEED, 1000000).   %% 1MHz
+-define(BUS, 0).
+-define(CHIP, 1).
 
 start() ->
-    init(),
-    demo().
+    start(?BUS,?CHIP).
 
 stop() ->
-    spi:close(0, 0).
+    stop(?BUS, ?CHIP).
 
-init() ->
+start(Bus,Chip) ->
+    init(Bus,Chip),
+    demo(Bus,Chip).
+
+stop(Bus,Chip) ->
+    spi:close(Bus, Chip).
+
+init(Bus,Chip) ->
     application:start(spi),
-    spi:open(0, 0),
-    spi:set_mode(0,0,0).
+    spi:open(Bus,Chip),
+    spi:set_mode(Bus,Chip,0).
+
+set_color(Color) ->
+    set_color(?BUS,?CHIP,Color,?SPEED).
+
+set_color(Bus,Chip,Color,Speed) ->
+    Pixmap = new(5*32, Color),
+    write(Bus,Chip,Pixmap,Speed).
+    
 
 %% create a stip of
 new() ->
@@ -31,11 +47,11 @@ new(N, Color) ->
     epx:pixmap_fill(Pixmap, Color),
     Pixmap.
 
-demo() ->
-    demo(5*32).
+demo(Bus,Chip) ->
+    demo(Bus,Chip,5*32).
 
-demo(Width) ->
-    Server = server(Width),
+demo(Bus,Chip,Width) ->
+    Server = server(Bus,Chip,Width),
     sprite(sp1, Server, {127,0,0}, 0, 5, Width, 1, 10, bounce),
     sprite(sp2, Server, {127,127,127}, Width, 10, Width, -1, 5, wrap),
     sprite(sp3, Server, {0,127,0}, Width div 2, 1, Width, -1, 20, wrap),
@@ -70,13 +86,13 @@ sprite_loop(Id, Server, Color, X, Xl, W, Xd, Speed, Option) ->
     end.
 	       
 
-server(N) ->
-    spawn_link(fun() -> server_loop(new(N), 0, 0) end).
+server(Bus,Chip,N) ->
+    spawn_link(fun() -> server_loop(Bus,Chip,new(N), 0, 0) end).
 
-server_loop(Pixmap, 0, Max) when Max > 0 ->
-    update(Pixmap),
-    server_loop(Pixmap, Max, Max);
-server_loop(Pixmap, I, Max) ->
+server_loop(Bus,Chip,Pixmap, 0, Max) when Max > 0 ->
+    update(Bus,Chip,Pixmap),
+    server_loop(Bus,Chip,Pixmap, Max, Max);
+server_loop(Bus,Chip,Pixmap, I, Max) ->
     receive
 	{set, Id, X, Xd, Xl, Color} ->
 	    {Max1,Is} = case get(Id) of 
@@ -84,20 +100,20 @@ server_loop(Pixmap, I, Max) ->
 			    _ -> {Max,1}
 			end,
 	    put(Id, {X, Xd, Xl, Color}),
-	    server_loop(Pixmap, I-Is, Max1)
+	    server_loop(Bus,Chip,Pixmap, I-Is, Max1)
     after 10 ->
-	    update(Pixmap),
-	    server_loop(Pixmap, Max, Max)
+	    update(Bus,Chip,Pixmap),
+	    server_loop(Bus,Chip,Pixmap, Max, Max)
     end.
 		
-update(Pixmap) ->
+update(Bus,Chip,Pixmap) ->
     W = epx:pixmap_info(Pixmap, width),
     epx:pixmap_fill(Pixmap, {0,0,0}),
     lists:foreach(
       fun({_,{X,Xd,Xl,Color}}) ->
 	      plot(Pixmap,X, Xd, Xl, W, Color)
       end, get()),
-    write(Pixmap).    
+    write(Bus,Chip,Pixmap).    
 
 plot(_Pixmap, _X, _Xd, 0, _W, _Color) ->
     ok;
@@ -115,10 +131,10 @@ wrap(X, W) when X >= W -> 0;
 wrap(X, W) when X =< 0 -> W - 1;
 wrap(X,_W) -> X.
 
-    
-
 %% wait at least 0.5 ms = 500 us  between refresh 
-write(Pixmap) ->
+write(Bus,Chip,Pixmap) ->
+    write(Bus,Chip,Pixmap,?SPEED).
+write(Bus,Chip,Pixmap,Speed) ->
     N = epx:pixmap_info(Pixmap, width),
     Data = epx:pixmap_get_pixels(Pixmap, 0, 0, N, 1),
-    spi:transfer(0,0,Data,0,0,?SPEED,8,0).
+    spi:transfer(Bus,Chip,Data,0,0,Speed,8,0).
