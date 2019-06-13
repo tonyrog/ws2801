@@ -16,7 +16,7 @@ init() ->
     gpio:set_direction(?CLCK_PIN, low),
     ok.
 
-%% create a stip of
+%% create a strip of 150 
 new() ->
     N = 5*30,
     new(N, {0,0,0}).
@@ -37,7 +37,6 @@ loop(I, N, Stripe0) ->
     Stripe2 = set(I1, {255,0,0}, Stripe1),
     loop(I1, N, Stripe2).
 
-
 get(I, Stripe) ->
     element(I+1, Stripe).
 
@@ -53,7 +52,6 @@ write_(I, Stripe) when I >= 1, I =< tuple_size(Stripe) ->
     write_(I+1, Stripe);
 write_(_I, _Stripe) ->
     ok.
-
 
 write_rgb(R,G,B) ->
     write_byte(R),
@@ -71,10 +69,3 @@ pulse(1) ->
     gpio:set(?DATA_PIN),
     gpio:set(?CLCK_PIN),
     gpio:clr(?CLCK_PIN).
-
-
-    
-	
-    
-    
-    

@@ -67,7 +67,7 @@ demo(Bus,Chip,Width,N) ->
     lists:foreach(
       fun(Name) ->
 	sprite(Name, Server, Width,
-	       #sprite { x=random:uniform(Width),
+	       #sprite { x=rand:uniform(Width)-1,
 			 color=random_color(),
 			 length=random(5, 10),
 			 dir=random(-1,1),
@@ -82,7 +82,7 @@ demo_blink(Bus,Chip,Width,N) ->
     lists:foreach(
       fun(Name) ->
 	sprite(Name, Server, Width,
-	       #sprite { x=random:uniform(Width),
+	       #sprite { x=rand:uniform(Width)-1,
 			 color=random_color(),
 			 length=3,   %% random(5, 10),
 			 dir=0,      %% random(-1,1)
@@ -103,7 +103,7 @@ sprite_loop(Id, Server, Width, Sprite) ->
     {X2,Xd1} = 
 	case Sprite#sprite.dir of
 	    0 ->
-		{random:uniform(Width), 0};
+		{rand:uniform(Width)-1, 0};
 	    Dir ->
 		X1 = Sprite#sprite.x + Dir,
 		if X1 < 0 ->
@@ -202,9 +202,9 @@ random(Min,Max) when is_number(Min), is_number(Max), Min =< Max ->
     Min + uniform(Max-Min).
 
 uniform(Range) when is_integer(Range), Range >= 0 ->
-    trunc(random:uniform()*Range+1);
+    trunc(rand:uniform()*Range+1);
 uniform(Range) when is_float(Range), Range >= 0 ->
-    random:uniform()*Range.
+    rand:uniform()*Range.
 
 scale({R,G,B}, X) ->
     {trunc(R*X),trunc(G*X),trunc(B*X)}.
